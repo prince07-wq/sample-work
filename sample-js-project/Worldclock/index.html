@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>world clock</title>
+    <head>
+    <link rel="stylesheet" href="clock.css">
+</head>   
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -45,18 +48,115 @@
     <div class="container">
   <!-- Content here -->
    <div class="jumbotron">
-  <h1 class="display-4">RIGHT NOW IT IS : <span id="indian-time">00:00:00</span></h1>
-  <p class="lead">INDIAN TIME ZONE</p>
+  <h1 class="display-4">RIGHT NOW IT IS : <span id="current-time">00:00:00</span></h1>
+  <p class="lead" id="current-zone-label">INDIAN TIME ZONE</p>
   <hr class="my-4">
-  <p>For more time zones click below.</p>
+  <p>Click a city to see its time:</p>
   <p class="lead">
-    <a class="btn btn-primary btn-lg" href="#" role="button">Browse Time</a>
+    <a class="btn btn-primary btn-lg tz-btn active" href="#" role="button"
+       data-zone="Asia/Kolkata" data-label="INDIAN TIME ZONE">India</a>
+    <a class="btn btn-primary btn-lg tz-btn" href="#" role="button"
+       data-zone="America/New_York" data-label="NEW YORK TIME ZONE">New York</a>
+    <a class="btn btn-primary btn-lg tz-btn" href="#" role="button"
+       data-zone="Europe/London" data-label="LONDON TIME ZONE">London</a>
+    <a class="btn btn-primary btn-lg tz-btn" href="#" role="button"
+       data-zone="Asia/Shanghai" data-label="CHINA TIME ZONE">China</a>
+    <a class="btn btn-primary btn-lg tz-btn" href="#" role="button"
+       data-zone="Asia/Tokyo" data-label="JAPAN TIME ZONE">Japan</a>
   </p>
 </div>
-   
+
+  <!-- Animated analog clock -->
+  <div class="clock-wrap">
+    <div class="clock">
+      <div class="outer-clock-face">
+        <div class="marking marking-one"></div>
+        <div class="marking marking-two"></div>
+        <div class="marking marking-three"></div>
+        <div class="marking marking-four"></div>
+
+        <div class="hand hour-hand"></div>
+        <div class="hand min-hand"></div>
+        <div class="hand second-hand"></div>
+
+        <div class="inner-clock-face"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 <script>
-    .
+    // ==== which timezone is currently selected (shared by digital label + analog clock) ====
+    let currentZone = "Asia/Kolkata";
+
+    // ---- digital jumbotron time ----
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleString("en-US", {
+            timeZone: currentZone,
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true
+        });
+        document.getElementById("current-time").innerHTML = timeString;
+    }
+
+    // ---- analog clock hands (adapted from the original clock.js to respect currentZone) ----
+    const secondHand = document.querySelector('.second-hand');
+    const minsHand = document.querySelector('.min-hand');
+    const hourHand = document.querySelector('.hour-hand');
+
+    function setClockHands() {
+        // get hour/minute/second for the selected timezone (not the browser's local time)
+        const parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: currentZone,
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+            hour12: false
+        }).formatToParts(new Date());
+
+        const lookup = {};
+        parts.forEach(p => lookup[p.type] = parseInt(p.value, 10));
+
+        const hour = lookup.hour % 12;
+        const mins = lookup.minute;
+        const seconds = lookup.second;
+
+        const secondsDegrees = ((seconds / 60) * 360) + 90;
+        secondHand.style.transform = `rotate(${secondsDegrees}deg)`;
+
+        const minsDegrees = ((mins / 60) * 360) + ((seconds / 60) * 6) + 90;
+        minsHand.style.transform = `rotate(${minsDegrees}deg)`;
+
+        const hourDegrees = ((hour / 12) * 360) + ((mins / 60) * 30) + 90;
+        hourHand.style.transform = `rotate(${hourDegrees}deg)`;
+    }
+
+    function tick() {
+        updateTime();
+        setClockHands();
+    }
+
+    setInterval(tick, 1000);
+    tick();
+
+    // ---- city button clicks ----
+    const buttons = document.querySelectorAll(".tz-btn");
+    buttons.forEach(btn => {
+        btn.addEventListener("click", function (e) {
+            e.preventDefault();
+
+            currentZone = this.getAttribute("data-zone");
+            document.getElementById("current-zone-label").innerHTML = this.getAttribute("data-label");
+
+            buttons.forEach(b => b.classList.remove("active"));
+            this.classList.add("active");
+
+            tick();
+        });
+    });
 </script>
     
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
